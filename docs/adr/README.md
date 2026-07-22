@@ -16,3 +16,4 @@ An ADR captures a single significant, hard-to-reverse technical decision: what w
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted | 2026-07-21 |
 | [0002](0002-dotnet-for-microservices.md) | .NET / C# as the primary microservice language | Accepted | 2026-07-21 |
 | [0003](0003-kafka-as-event-backbone.md) | Apache Kafka as the event backbone | Accepted | 2026-07-21 |
+| [0004](0004-mongodb-hand-rolled-event-sourcing.md) | Hand-rolled event sourcing on MongoDB for Fence and Alert | Accepted | 2026-07-22 |

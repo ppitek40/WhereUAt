@@ -21,7 +21,8 @@ Five bounded contexts, one aggregate each: **User**, **Permission**, **Location*
 Tracked as ADRs in `docs/adr/` (see `docs/adr/README.md` for the index) — read the relevant ADR before revisiting a settled decision:
 
 - Services are built in .NET / C#.
-- Apache Kafka is the event backbone, and the intended basis for event-sourced aggregates.
+- Apache Kafka is the event backbone for cross-service messaging.
+- Fence and Alert use hand-rolled event sourcing on MongoDB.
 - Cloud (Azure-leaning) and IaC tooling (Terraform vs. Kubernetes/Helm) are still open — don't treat either as decided.
 
 ## Working conventions in this repo

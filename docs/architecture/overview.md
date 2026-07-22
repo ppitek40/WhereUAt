@@ -2,9 +2,9 @@
 
 **Status:** living document — reflects the current plan, not a finished system. Updated as decisions land in [`docs/adr/`](../adr/README.md).
 
-## Bounded contexts → services (proposed)
+## Bounded contexts → services
 
-The Event Storming session identified five aggregates, each a natural bounded context. The default plan is one microservice per aggregate; a context only splits further if it grows a distinct sub-domain.
+The Event Storming session identified five aggregates, each a natural bounded context. Confirmed through the data-flow diagram below: one microservice per aggregate, with `location-service` further split internally (see Bounded-context notes).
 
 | Aggregate | Service | Responsibility |
 |-----------|---------|-----------------|
@@ -16,34 +16,58 @@ The Event Storming session identified five aggregates, each a natural bounded co
 
 ## Event flow (the reactive spine)
 
+Settled through three rounds of whiteboarding the actual data flow (not just the aggregate map):
+
 ```mermaid
 flowchart LR
-    GPS[Device GPS] --> LS[location-service]
-    LS -->|LocationUpdated| FS[fence-service]
-    PS[permission-service] -.->|permission checked at evaluation time| FS
-    FS -->|FenceCrossed| AS[alert-service]
-    AS -->|Alert Sent| Email[SES / email provider]
+    GPS[Device GPS / clients] --> Ingest[location-service: Ingestion]
+    Ingest --> Kafka[(Kafka)]
+    Kafka --> LocState[location-service: State]
+    LocState <--> LocCache[(Redis)]
+    LocState <--> LocDB[(DB)]
+    LocState -->|LocationUpdated, post-dedup| Perm[permission-service: Privacy Filter]
+    Perm <--> PermCache[(Redis: Permissions Cache)]
+    Perm <--> PermDB[(DB)]
+    Perm -->|permission-checked location| Fence[fence-service: GeoFence]
+    Fence -->|FenceCrossed| Alert[alert-service]
+    Alert --> SES[SES / email]
+    Alert --> UI[UI]
 
-    US[user-service] -.->|UserDeleted cascade| LS
-    US -.->|UserDeleted cascade| PS
-    US -.->|UserDeleted cascade| FS
+    Gateway[api-gateway] <--> SignalR[(SignalR)]
+    SignalR --> UI
+    UI --> Gateway
+    Gateway <--> Perm
+    Gateway <--> Fence
+    Gateway <--> User[user-service]
+    User <--> UserDB[(DB)]
 
-    IdP[OAuth2 identity provider] --> US
-    OSM[OpenStreetMap] --> FS
+    IdP[OAuth2 identity provider] --> User
+    OSM[OpenStreetMap] --> UI
 ```
 
+The key property this design enforces (per BDR-002): permission is re-checked on *every* location update, in one place (`permission-service`'s Privacy Filter), before that update reaches `fence-service` — not just when serving reads. `location-service` rejects ~90% of raw pings that carry no positional change before anything downstream ever sees them.
+
 Full domain narrative, aggregates, and business decision records: [`docs/domain/event-storming-summary.md`](../domain/event-storming-summary.md).
+
+## Bounded-context notes
+
+- **`location-service`** is internally split into an `Ingestion` component (absorbs raw GPS pings, publishes to Kafka) and a `State` component (dedup/current-position cache + history `DB`) — one bounded context, two deployable pieces.
+- **`permission-service`** owns its own `DB`, separate from `user-service`'s — User and Permission stayed two aggregates with two stores, per the original event-storming split, not merged.
+- Database engines are deliberately left generic (`DB`) for `location-service`, `permission-service`, and `user-service` — not yet decided. `fence-service` and `alert-service` use MongoDB per [ADR-0004](../adr/0004-mongodb-hand-rolled-event-sourcing.md).
+
+## Known simplifications in the diagram (revisit before/at implementation)
+
+- The `User Deleted` cascade (BDR-004) isn't represented in this data-flow diagram; it's a lifecycle concern tracked separately, not dropped.
 
 ## Cross-cutting concerns — not yet decided
 
 These are the advanced patterns the project intends to exercise; each will get its own ADR once evaluated rather than being decided upfront:
 
-- **Event sourcing store** per aggregate — Kafka log directly vs. a dedicated store (e.g. Marten, EventStoreDB) with Kafka for cross-service propagation.
-- **CQRS read models** — `fence-service` needs a fast, eventually-consistent read model of permissions to re-check them on every `LocationUpdated` without calling `permission-service` synchronously on the hot path.
+- **CQRS read models** — beyond the Permissions Cache already in the diagram, whether `fence-service` needs its own materialized read model of fence definitions vs. querying on demand.
 - **Saga / process manager** for the `User Deleted` fan-out cascade (must be reliable and idempotent across three services).
-- **API gateway / BFF** in front of the services for the mobile client.
+- **API gateway implementation** — the diagram fixes its existence and role, not the tool (candidate: YARP).
 - **Service-to-service auth** (likely mTLS or a service mesh, depending on the Kubernetes decision).
-- **Observability** — distributed tracing across the Location → Fence → Alert spine.
+- **Observability** — distributed tracing across the Location → Permission → Fence → Alert spine.
 - **Cloud / IaC target** — Azure-leaning, Terraform vs. Kubernetes/Helm still under evaluation (SES stays on AWS regardless, per the event storming domain edges).
 
 ## Related docs
