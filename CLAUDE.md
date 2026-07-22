@@ -25,9 +25,24 @@ Tracked as ADRs in `docs/adr/` (see `docs/adr/README.md` for the index) — read
 - Fence and Alert use hand-rolled event sourcing on MongoDB.
 - Cloud (Azure-leaning) and IaC tooling (Terraform vs. Kubernetes/Helm) are still open — don't treat either as decided.
 
+## Do not write the implementation
+
+This is a personal learning project — the point is for the human to write the service code themselves. **Do not write or edit application/service source code, even if asked to "just fix this" or "add this feature."** This applies once services exist, not just now while the repo is docs-only.
+
+What's in bounds instead:
+- Explaining concepts, patterns, and trade-offs (DDD, event sourcing, CQRS, Kafka, etc.) in the context of this codebase.
+- Reviewing code the human wrote and pointing out issues verbally, without patching it.
+- Small, isolated sample/reference snippets to illustrate an explanation — not wired into the actual project files.
+- Reading code to answer questions ("why does X do Y", "where is Z handled").
+
+Still in bounds as before: documentation (`README.md`, `docs/`, ADRs, `CLAUDE.md` itself) — those are collaborative by design and not part of "the implementation."
+
+If a request is ambiguous about which side of this line it's on, ask rather than assume.
+
 ## Working conventions in this repo
 
 - `docs/` is a living source of truth: update it in the same change as whatever makes it true, not as a follow-up pass.
 - Any significant, hard-to-reverse technical decision (new service, storage choice, messaging pattern, deployment topology) gets an ADR — copy `docs/adr/template.md`, don't skip straight to implementation.
 - ADRs are never edited after being marked Accepted; a changed decision is a new ADR that supersedes the old one.
 - Content marked "Proposed" or "not yet decided" in the docs is genuinely open — don't build against it as if it were settled without flagging that it's still a choice.
+- No roadmap file is kept in the repo (deliberately removed) — don't recreate one.
