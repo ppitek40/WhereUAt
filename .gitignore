@@ -68,3 +68,7 @@ vcpkg_installed/
 Testing/
 .cache/
 .DS_Store
+
+bin/
+obj/
+.idea/
