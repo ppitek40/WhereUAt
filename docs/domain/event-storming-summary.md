@@ -45,7 +45,7 @@ The **Fence** aggregate owns the crossing decision (`Fence Crossed`), because a 
 2. Reactive policy: *whenever Location Updated → evaluate this person's fences* (permission is re-checked at this point).
 3. Fence aggregate detects *Fence Crossed*.
 4. Reactive policy: *whenever Fence Crossed → send alert to the fence's creator* (rate-limited).
-5. Alert aggregate delivers → *Alert Sent*.
+5. Alert aggregate delivers, retrying across channels as needed → *Alert Sent* (or *Delivery Exhausted* if every attempt fails) — see BDR-005.
 
 **User deletion cascade:** *whenever User Deleted →* three parallel cleanup policies delete the user's Locations, Permissions, and Fences across the respective aggregates.
 
@@ -65,7 +65,7 @@ The **Fence** aggregate owns the crossing decision (`Fence Crossed`), because a 
 - **Device Hardware / GPS** (upstream) — source of raw position feeding `send Location`. Origin of the phantom-crossing risk; the app depends on device accuracy it does not control.
 - **OAuth2 identity provider** (downstream) — account registration and authentication.
 - **OpenStreetMap** (downstream) — map rendering for location views and fence creation.
-- **SES / email provider** (downstream) — alert delivery. Currently email only.
+- **SES / email provider** (downstream) — one alert delivery channel; the Alert aggregate is designed to fan out across others (e.g. push, SMS) — see BDR-005.
 
 ---
 
@@ -219,3 +219,39 @@ A deleted user may own permissions (granted and received), fences, and accumulat
 - Easier: account deletion produces a consistent, data-protection-friendly cleanup.
 - Harder: the cascade must be reliable and ideally idempotent; partial failure needs handling.
 - Revisit: alongside the data-retention decision, since routine retention is a separate concern from deletion.
+
+---
+
+## BDR-005: Alert aggregate models delivery as a retryable, multi-channel history
+
+**Status:** Accepted
+**Date:** 2026-07-24
+**Deciders:** Architecture / backend team
+
+### Context
+BDR-001 gave Alert ownership of delivery, separate from Fence's crossing detection. What "delivery" needs to remember was left open: at minimum, whether an alert exists at all for a given crossing; at most, a full history of attempts across channels, including retries and failures. ADR-0004 already committed `alert-service` to hand-rolled event sourcing on MongoDB on the assumption that "delivery history" was a real concept — this BDR settles what that history actually contains.
+
+### Decision
+Alert delivery may retry and may fan out across multiple channels (starting with email via SES, extensible to others such as push or SMS). Each attempt, failure, and eventual success or exhaustion is recorded as a domain event on the Alert aggregate (e.g. `Alert Requested`, `Delivery Attempted`, `Delivery Failed`, `Delivery Succeeded`, `Delivery Exhausted`), replayed to project current delivery status. This gives concrete shape to the "delivery history" ADR-0004 already assumed.
+
+### Options Considered
+
+#### Option A: Stateless — consume `Fence Crossed`, send, keep nothing
+**Pros:** Simplest possible implementation; no storage to design.
+**Cons:** Not safe under Kafka's at-least-once delivery — a redelivered `Fence Crossed` event (e.g. after a consumer restart) would cause a duplicate alert with no way to detect it.
+
+#### Option B: Minimal idempotency marker only
+**Pros:** Solves the duplicate-alert problem with one small durable record per crossing; no event log or replay needed.
+**Cons:** Discards ADR-0004's "delivery history" justification for Alert — retries and channel outcomes would have nowhere to be recorded.
+
+#### Option C: Full delivery history via event sourcing (chosen)
+**Pros:** Retry attempts and per-channel outcomes are first-class, replayable facts, supporting "why did this alert take three tries" style questions; the Alert aggregate's stream (keyed off the triggering crossing event) doubles as the idempotency guard, so no separate dedup mechanism is needed; consistent with the ES treatment already given to Fence.
+**Cons:** More upfront design than a stateless or marker-only approach; retry/backoff and multi-channel fan-out logic must be designed and tested by hand, same as Fence's crossing history.
+
+### Trade-off Analysis
+Once retries and multiple channels were treated as real requirements rather than a hypothetical, delivery history stopped being speculative and became the same kind of "history is the point" case as Fence's crossing history: current status is derived by replaying what actually happened, not a field that gets overwritten. This also resolves idempotent consumption for free, rather than needing a separate mechanism.
+
+### Consequences
+- Easier: delivery status, retry count, and per-channel outcome are all derivable from the same stream that already exists for ES reasons; adding a new channel is an additive event/projection change, not a schema migration.
+- Harder: retry/backoff policy and multi-channel fan-out are real business logic to design, not just delivery plumbing.
+- Revisit: if a channel's delivery semantics turn out to need its own aggregate (e.g. a channel with its own multi-step delivery protocol).

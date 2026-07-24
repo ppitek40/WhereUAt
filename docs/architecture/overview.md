@@ -53,7 +53,7 @@ Full domain narrative, aggregates, and business decision records: [`docs/domain/
 
 - **`location-service`** is internally split into an `Ingestion` component (absorbs raw GPS pings, publishes to Kafka) and a `State` component (dedup/current-position cache + history `DB`) — one bounded context, two deployable pieces.
 - **`permission-service`** owns its own `DB`, separate from `user-service`'s — User and Permission stayed two aggregates with two stores, per the original event-storming split, not merged.
-- Database engines are deliberately left generic (`DB`) for `location-service`, `permission-service`, and `user-service` — not yet decided. `fence-service` and `alert-service` use MongoDB per [ADR-0004](../adr/0004-mongodb-hand-rolled-event-sourcing.md).
+- Database engines are deliberately left generic (`DB`) for `location-service`, `permission-service`, and `user-service` — not yet decided. `fence-service` and `alert-service` use MongoDB per [ADR-0004](../adr/0004-mongodb-hand-rolled-event-sourcing.md); for `alert-service` that store holds the per-attempt delivery event log (retries, channel outcomes) described in [BDR-005](../domain/event-storming-summary.md#bdr-005-alert-aggregate-models-delivery-as-a-retryable-multi-channel-history).
 
 ## Known simplifications in the diagram (revisit before/at implementation)
 
