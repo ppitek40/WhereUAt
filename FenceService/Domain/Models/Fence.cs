@@ -12,6 +12,7 @@ public class Fence
     public RadiusInMeters RadiusInMeters { get; private set; }
     public Location Location { get; private set; }
     public bool IsDeleted { get; private set; }
+    public bool IsCrossed { get; private set; }
 
     public static FenceCreated Create(
         FenceName name,
@@ -56,7 +57,34 @@ public class Fence
 
     public FenceDeleted Delete()
     {
+        if (IsDeleted)
+            throw new InvalidOperationException("Fence is already deleted.");
+
         var @event = new FenceDeleted(Id);
+
+        Apply(@event);
+
+        return @event;
+    }
+
+    public FenceCrossed Cross()
+    {
+        if (IsCrossed)
+            throw new InvalidOperationException("Fence is already crossed.");
+
+        var @event = new FenceCrossed(Id, Name, CreatorId, TargetId);
+
+        Apply(@event);
+
+        return @event;
+    }
+
+    public FenceUncrossed Uncross()
+    {
+        if (IsCrossed)
+            throw new InvalidOperationException("Fence is already not crossed.");
+
+        var @event = new FenceUncrossed(Id);
 
         Apply(@event);
 
@@ -83,5 +111,15 @@ public class Fence
         Name = @event.Name;
         RadiusInMeters = @event.RadiusInMeters;
         Location = @event.Location;
+    }
+
+    private void Apply(FenceCrossed @event)
+    {
+        IsCrossed = true;
+    }
+
+    private void Apply(FenceUncrossed @event)
+    {
+        IsCrossed = false;
     }
 }
