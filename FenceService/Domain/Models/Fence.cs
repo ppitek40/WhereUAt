@@ -1,5 +1,6 @@
 using Domain.Events;
 using Domain.ValueObjects;
+using WhereUAt.SharedKernel;
 
 namespace Domain.Models;
 
@@ -14,7 +15,7 @@ public class Fence
     public bool IsDeleted { get; private set; }
     public bool IsCrossed { get; private set; }
 
-    public static FenceCreated Create(
+    public static Result<FenceCreated> Create(
         FenceName name,
         CreatorId creatorId,
         TargetId targetId,
@@ -22,7 +23,7 @@ public class Fence
         Location location)
     {
         if (creatorId.Value == targetId.Value)
-            throw new ArgumentException("You can't put fence on yourself.");
+            return Result<FenceCreated>.Failure("You can't put fence on yourself.");
 
         var fence = new Fence();
 
@@ -39,7 +40,7 @@ public class Fence
         return @event;
     }
 
-    public FenceModified Modify(
+    public Result<FenceModified> Modify(
         FenceName name,
         RadiusInMeters radiusInMeters,
         Location location)
@@ -55,10 +56,10 @@ public class Fence
         return @event;
     }
 
-    public FenceDeleted Delete()
+    public Result<FenceDeleted> Delete()
     {
         if (IsDeleted)
-            throw new InvalidOperationException("Fence is already deleted.");
+            return Result<FenceDeleted>.Failure("Fence is already deleted.");
 
         var @event = new FenceDeleted(Id);
 
@@ -67,10 +68,10 @@ public class Fence
         return @event;
     }
 
-    public FenceCrossed Cross()
+    public Result<FenceCrossed> Cross()
     {
         if (IsCrossed)
-            throw new InvalidOperationException("Fence is already crossed.");
+            return Result<FenceCrossed>.Failure("Fence is already crossed.");
 
         var @event = new FenceCrossed(Id, Name, CreatorId, TargetId);
 
@@ -79,10 +80,10 @@ public class Fence
         return @event;
     }
 
-    public FenceUncrossed Uncross()
+    public Result<FenceUncrossed> Uncross()
     {
         if (IsCrossed)
-            throw new InvalidOperationException("Fence is already not crossed.");
+            return Result<FenceUncrossed>.Failure("Fence is already not crossed.");
 
         var @event = new FenceUncrossed(Id);
 
