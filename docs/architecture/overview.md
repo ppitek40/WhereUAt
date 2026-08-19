@@ -65,7 +65,7 @@ These are the advanced patterns the project intends to exercise; each will get i
 
 - **CQRS read models** — beyond the Permissions Cache already in the diagram, whether `fence-service` needs its own materialized read model of fence definitions vs. querying on demand.
 - **Saga / process manager** for the `User Deleted` fan-out cascade (must be reliable and idempotent across three services).
-- **API gateway implementation** — the diagram fixes its existence and role, not the tool (candidate: YARP).
+- **API gateway implementation** — the diagram fixes its existence and role, not the tool (candidate: YARP). Its external surface (UI-facing) is REST/JSON and its internal calls into services (`Gateway <--> Fence`, etc.) are gRPC, per [ADR-0006](../adr/0006-grpc-internal-rest-external.md).
 - **Service-to-service auth** (likely mTLS or a service mesh, depending on the Kubernetes decision).
 - **Observability** — distributed tracing across the Location → Permission → Fence → Alert spine.
 - **Cloud / IaC target** — Azure-leaning, Terraform vs. Kubernetes/Helm still under evaluation (SES stays on AWS regardless, per the event storming domain edges).

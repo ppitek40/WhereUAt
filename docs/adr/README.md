@@ -18,3 +18,4 @@ An ADR captures a single significant, hard-to-reverse technical decision: what w
 | [0003](0003-kafka-as-event-backbone.md) | Apache Kafka as the event backbone | Accepted | 2026-07-21 |
 | [0004](0004-mongodb-hand-rolled-event-sourcing.md) | Hand-rolled event sourcing on MongoDB for Fence and Alert | Accepted | 2026-07-22 |
 | [0005](0005-result-pattern-for-domain-errors.md) | Result pattern for expected domain errors, kept in a shared kernel | Proposed | 2026-08-03 |
+| [0006](0006-grpc-internal-rest-external.md) | gRPC for internal service calls, REST for the external-facing API | Accepted | 2026-08-19 |
