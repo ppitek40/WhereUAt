@@ -91,7 +91,7 @@ public class Fence
         if (IsDeleted)
             return Result<FenceUncrossed>.Failure("Fence is already deleted.");
 
-        if (IsCrossed)
+        if (!IsCrossed)
             return Result<FenceUncrossed>.Failure("Fence is already not crossed.");
 
         var @event = new FenceUncrossed(Id);
