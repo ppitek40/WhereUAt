@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <!-- xunit.v3 runs on Microsoft Testing Platform, not VSTest. -->
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+        <PackageReference Include="NetArchTest.eNhancedEdition" Version="1.4.5" />
+        <PackageReference Include="xunit.v3" Version="3.2.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    </ItemGroup>
+
+    <!-- References every layer: architecture rules must see the whole graph,
+         including assemblies no other test project is allowed to reference. -->
+    <ItemGroup>
+        <ProjectReference Include="..\..\Api\Api.csproj" />
+        <ProjectReference Include="..\..\Application\Application.csproj" />
+        <ProjectReference Include="..\..\Domain\Domain.csproj" />
+        <ProjectReference Include="..\..\Infrastructure\Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>
