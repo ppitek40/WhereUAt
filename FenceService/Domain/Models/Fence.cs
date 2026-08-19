@@ -45,6 +45,9 @@ public class Fence
         RadiusInMeters radiusInMeters,
         Location location)
     {
+        if (IsDeleted)
+            return Result<FenceModified>.Failure("Fence is already deleted.");
+
         var @event = new FenceModified(
             Id,
             name,
@@ -70,6 +73,9 @@ public class Fence
 
     public Result<FenceCrossed> Cross()
     {
+        if (IsDeleted)
+            return Result<FenceCrossed>.Failure("Fence is already deleted.");
+
         if (IsCrossed)
             return Result<FenceCrossed>.Failure("Fence is already crossed.");
 
@@ -82,6 +88,9 @@ public class Fence
 
     public Result<FenceUncrossed> Uncross()
     {
+        if (IsDeleted)
+            return Result<FenceUncrossed>.Failure("Fence is already deleted.");
+
         if (IsCrossed)
             return Result<FenceUncrossed>.Failure("Fence is already not crossed.");
 
