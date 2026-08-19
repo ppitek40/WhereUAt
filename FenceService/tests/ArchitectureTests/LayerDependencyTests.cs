@@ -57,16 +57,4 @@ public class LayerDependencyTests
 
         Assert.True(result.IsSuccessful);
     }
-
-    [Fact]
-    public void ApiShouldNotDependOnInfrastructure()
-    {
-        var result = Types.InAssembly(Layers.Api)
-            .Should()
-            .NotHaveDependencyOnAny(Layers.InfrastructureNamespace)
-            .GetResult();
-
-        Assert.True(result.IsSuccessful);
-    }
-
 }

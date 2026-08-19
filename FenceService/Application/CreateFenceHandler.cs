@@ -36,12 +36,18 @@ public class CreateFenceCommandHandler(
             new Location(Latitude.From(command.Latitude), Longitude.From(command.Longitude))
         );
 
-        if(fenceCreatedResult.IsFailure)
+        if (fenceCreatedResult.IsFailure)
             return Result<FenceId>.From(fenceCreatedResult);
 
-        var saveResult = eventStore.Save(fenceCreatedResult.Value);
+        var fenceCreatedEvent = fenceCreatedResult.Value!;
 
-        if(saveResult.IsFailure)
+        var saveResult = eventStore.Save(
+            fenceCreatedEvent.Id.Value,
+            typeof(Fence),
+            fenceCreatedEvent,
+            1);
+
+        if (saveResult.IsFailure)
             return Result<FenceId>.From(saveResult);
 
         return fenceCreatedResult.Value!.Id;
