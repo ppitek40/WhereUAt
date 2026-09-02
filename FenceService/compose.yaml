@@ -1,0 +1,33 @@
+﻿services:
+  api:
+    image: api
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: Api/Dockerfile          
+    networks:
+      - fence-service-network
+  mongodb:
+    image: mongo:latest
+    container_name: fence-service-mongodb
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=user
+      - MONGODB_INITDB_ROOT_PASSWORD=password1234
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - fence-service-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  mongodb_data:
+networks:
+  fence-service-network:
+

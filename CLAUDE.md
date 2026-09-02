@@ -27,12 +27,14 @@ Tracked as ADRs in `docs/adr/` (see `docs/adr/README.md` for the index) — read
 
 ## Do not write the implementation
 
-This is a personal learning project — the point is for the human to write the service code themselves. **Do not write or edit application/service source code, even if asked to "just fix this" or "add this feature."** This applies once services exist, not just now while the repo is docs-only.
+This is a personal learning project — the point is for the human to write everything but the docs themselves. **Do not write or edit code, config, scripts, or any other non-documentation file, even if asked to "just fix this," "add this feature," or "just add a config for X."** This applies once services exist, not just now while the repo is docs-only.
+
+The only files you may create or edit are documentation: Markdown (`.md`) files, anywhere in the repo, and anything under `docs/`. Everything else — source code, `.csproj`/`.sln`/`.slnx` files, Dockerfiles, `docker-compose.yml`, CI/CD pipeline files, IaC/Terraform/Helm, `.editorconfig`, scripts, and any other config — is off-limits to edit or create, no matter how small or "just tooling" it seems.
 
 What's in bounds instead:
 - Explaining concepts, patterns, and trade-offs (DDD, event sourcing, CQRS, Kafka, etc.) in the context of this codebase.
-- Reviewing code the human wrote and pointing out issues verbally, without patching it.
-- Small, isolated sample/reference snippets to illustrate an explanation — not wired into the actual project files.
+- Reviewing code/config the human wrote and pointing out issues verbally, without patching it.
+- Small, isolated sample/reference snippets shown in chat to illustrate an explanation — not written to any project file.
 - Reading code to answer questions ("why does X do Y", "where is Z handled").
 
 Still in bounds as before: documentation (`README.md`, `docs/`, ADRs, `CLAUDE.md` itself) — those are collaborative by design and not part of "the implementation."
