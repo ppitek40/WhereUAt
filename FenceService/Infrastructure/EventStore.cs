@@ -24,7 +24,7 @@ public class EventStore : IEventStore
             Version = version
         };
 
-        var client = new MongoClient("mongodb://localhost:27017");
+        var client = new MongoClient("mongodb://user:password1234@localhost:27017");
         var collection = client.GetDatabase("WhereUAt")
             .GetCollection<BsonDocument>("fences");
 
