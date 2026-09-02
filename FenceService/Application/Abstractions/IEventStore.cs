@@ -1,3 +1,4 @@
+using Domain.Events;
 using WhereUAt.SharedKernel;
 
 namespace Application.Abstractions;
@@ -9,4 +10,6 @@ public interface IEventStore
         Type streamType,
         T eventData,
         int version);
+
+    public Task<IList<EventStored<IFenceEvent>>> Get(Guid streamId);
 }

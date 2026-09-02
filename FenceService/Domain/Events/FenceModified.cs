@@ -6,4 +6,4 @@ public sealed record FenceModified(
     FenceId Id,
     FenceName Name,
     RadiusInMeters RadiusInMeters,
-    Location Location);
+    Location Location) : IFenceEvent;

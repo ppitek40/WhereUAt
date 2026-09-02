@@ -8,4 +8,4 @@ public sealed record FenceCreated(
     CreatorId CreatorId,
     TargetId TargetId,
     RadiusInMeters RadiusInMeters,
-    Location Location);
+    Location Location) : IFenceEvent;

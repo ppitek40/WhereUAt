@@ -15,6 +15,10 @@ public class Fence
     public bool IsDeleted { get; private set; }
     public bool IsCrossed { get; private set; }
 
+    private Fence()
+    {
+    }
+
     public static Result<FenceCreated> Create(
         FenceName name,
         CreatorId creatorId,
@@ -131,5 +135,41 @@ public class Fence
     private void Apply(FenceUncrossed @event)
     {
         IsCrossed = false;
+    }
+
+    public static Fence Load(ICollection<IFenceEvent> events)
+    {                                    
+        if (events == null || events.Count == 0)
+            throw new ArgumentNullException(nameof(events));
+
+        var fence = new Fence();
+        foreach(var @event in events)
+            fence.When(@event);
+
+        return fence;
+    }
+
+    private void When(IFenceEvent @event)
+    {
+        switch (@event)
+        {
+            case FenceCreated e:
+            Apply(e);
+            break;
+            case FenceUncrossed e:
+            Apply(e);
+            break;
+            case FenceDeleted e:
+            Apply(e);
+            break;
+            case FenceModified e:
+            Apply(e);
+            break;            
+            case FenceCrossed e:
+            Apply(e);
+            break;
+            default:
+                throw new InvalidOperationException($"Unknown event type: {@event.GetType().Name}");
+        }
     }
 }
