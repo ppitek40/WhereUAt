@@ -5,7 +5,7 @@ using WhereUAt.SharedKernel;
 
 namespace Infrastructure;
 
-public class EventStore : IEventStore
+public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
 {
     public Result Save<T>(
         Guid streamId,
@@ -24,11 +24,8 @@ public class EventStore : IEventStore
             Version = version
         };
 
-        var client = new MongoClient("mongodb://user:password1234@localhost:27017");
-        var collection = client.GetDatabase("WhereUAt")
-            .GetCollection<BsonDocument>("fences");
-
-        collection.InsertOne(@event.ToBsonDocument());
+        mongoDatabase.GetCollection<BsonDocument>("fences")
+            .InsertOne(@event.ToBsonDocument());
 
         return Result.Success();
     }
