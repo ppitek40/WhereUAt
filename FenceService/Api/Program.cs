@@ -1,4 +1,4 @@
-using Api.Endpoints;
+using Api.Services;
 using Application;
 using Infrastructure;
 
@@ -12,10 +12,10 @@ builder.Services
     .AddInfrastructure()
     .AddApplication();
 
+builder.Services.AddGrpc();
+
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
-
-app.MapCreateFence();
+app.MapGrpcService<FencesGrpcService>();
 
 app.Run();

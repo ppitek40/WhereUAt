@@ -1,3 +1,4 @@
+using Grpc.Net.Client;
 using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -7,8 +8,10 @@ namespace IntegrationTests;
 
 public class FenceApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private GrpcChannel? _channel;
     private readonly MongoDbContainer _mongo = new MongoDbBuilder("mongo:8")
         .Build();
+
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -21,6 +24,16 @@ public class FenceApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             "WhereUAt_IntegrationTests");
     }
 
+    public Fences.V1.Fences.FencesClient CreateGrpcClient()
+    {
+        _channel = GrpcChannel.ForAddress(Server.BaseAddress, new GrpcChannelOptions
+        {
+            HttpHandler = Server.CreateHandler()
+        });
+
+        return new Fences.V1.Fences.FencesClient(_channel);
+    }
+
     public async Task InitializeAsync()
     {
         await _mongo.StartAsync();
@@ -28,6 +41,7 @@ public class FenceApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     async Task IAsyncLifetime.DisposeAsync()
     {
+        _channel?.Dispose();
         await _mongo.DisposeAsync();
         await base.DisposeAsync();
     }

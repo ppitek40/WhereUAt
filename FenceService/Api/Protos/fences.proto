@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package fences.v1;
+
+service Fences {
+  rpc CreateFence (CreateFenceRequest) returns (CreateFenceResponse);
+}
+
+message CreateFenceRequest {
+  string name = 1;
+  string creator_id = 2;
+  string target_id = 3;
+  int32 radius_in_meters = 4;
+  double latitude = 5;
+  double longitude = 6;
+}
+
+message CreateFenceResponse {
+  string fence_id = 1;
+}

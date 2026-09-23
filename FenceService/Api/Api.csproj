@@ -18,4 +18,12 @@
       <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Grpc.AspNetCore" Version="2.84.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Protos\fences.proto" GrpcServices="Server" Access="Internal" />
+    </ItemGroup>
+
 </Project>

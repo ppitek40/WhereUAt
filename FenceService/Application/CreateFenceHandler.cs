@@ -1,6 +1,7 @@
 using Application.Abstractions;
 using Domain.Models;
 using Domain.ValueObjects;
+using Vogen;
 using WhereUAt.SharedKernel;
 
 namespace Application;
@@ -20,20 +21,40 @@ public class CreateFenceCommandHandler(
 {
     public Result<FenceId> Handle(CreateFenceCommand command)
     {
-        var creatorId = CreatorId.From(command.CreatorId);
-        var targetId = TargetId.From(command.TargetId);
+        var name = FenceName.TryFrom(command.Name);
+        var radius = RadiusInMeters.TryFrom(command.RadiusInMeters);
+        var latitude = Latitude.TryFrom(command.Latitude);
+        var longitude = Longitude.TryFrom(command.Longitude);
+        var creatorId = CreatorId.TryFrom(command.CreatorId);
+        var targetId = TargetId.TryFrom(command.TargetId);
 
-        var canWatchResult = permissionService.CanWatch(creatorId, targetId);
+        var errors = new[]
+            {
+                name.Error,
+                radius.Error,
+                latitude.Error,
+                longitude.Error,
+                creatorId.Error,
+                targetId.Error
+            }
+            .Where(e => e != Validation.Ok)
+            .Select(e => e.ErrorMessage)
+            .ToArray();
+
+        if (errors.Length != 0)
+            return Result<FenceId>.Failure(errors);
+
+        var canWatchResult = permissionService.CanWatch(creatorId.ValueObject, targetId.ValueObject);
 
         if (canWatchResult.IsFailure)
             return Result<FenceId>.From(canWatchResult);
 
         var fenceCreatedResult = Fence.Create(
-            FenceName.From(command.Name),
-            creatorId,
-            targetId,
-            RadiusInMeters.From(command.RadiusInMeters),
-            new Location(Latitude.From(command.Latitude), Longitude.From(command.Longitude))
+            name.ValueObject,
+            creatorId.ValueObject,
+            targetId.ValueObject,
+            radius.ValueObject,
+            new Location(latitude.ValueObject, longitude.ValueObject)
         );
 
         if (fenceCreatedResult.IsFailure)

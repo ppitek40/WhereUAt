@@ -11,4 +11,5 @@
     <Project Path="tests/ArchitectureTests/ArchitectureTests.csproj" />
     <Project Path="tests/IntegrationTests/IntegrationTests.csproj" />
   </Folder>
+  <Project Path="Sdk/Sdk.csproj" />
 </Solution>
