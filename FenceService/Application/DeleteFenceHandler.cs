@@ -9,15 +9,15 @@ public record DeleteFenceCommand(Guid FenceId);
 
 public class DeleteFenceHandler(IEventStore eventStore)
 {
-    public async Task<Result> Handle(DeleteFenceCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(DeleteFenceCommand command, CancellationToken cancellationToken)
     {
-        var fenceIdResult = FenceId.TryFrom(request.FenceId).ToResult();
+        var fenceIdResult = FenceId.TryFrom(command.FenceId).ToResult();
 
         if (fenceIdResult.IsFailure)
             return fenceIdResult;
 
         var fenceEvents = await eventStore.GetAsync(fenceIdResult.Value.Value, cancellationToken);
-        var fence = Fence.Load(fenceEvents.Select(x => x.EventData).ToList());
+        var fence = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
 
         var deleteEventResult = fence.Delete();
 

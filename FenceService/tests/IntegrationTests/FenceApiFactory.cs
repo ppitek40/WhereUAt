@@ -12,7 +12,6 @@ public class FenceApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly MongoDbContainer _mongo = new MongoDbBuilder("mongo:8")
         .Build();
 
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting(

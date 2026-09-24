@@ -4,7 +4,10 @@ using Grpc.Core;
 
 namespace Api.Services;
 
-internal sealed class FencesGrpcService(CreateFenceHandler handler, DeleteFenceHandler deleteFenceHandler) : Fences.V1.Fences.FencesBase
+internal sealed class FencesGrpcService(
+    CreateFenceHandler handler,
+    ModifyFenceHandler modifyFenceHandler,
+    DeleteFenceHandler deleteFenceHandler) : Fences.V1.Fences.FencesBase
 {
     public override async Task<CreateFenceResponse> CreateFence(
         CreateFenceRequest request,
@@ -27,6 +30,23 @@ internal sealed class FencesGrpcService(CreateFenceHandler handler, DeleteFenceH
         {
             FenceId = result.Value!.Value.ToString()
         };
+    }
+
+    public override async Task<ModifyFenceResponse> ModifyFence(ModifyFenceRequest request, ServerCallContext context)
+    {
+        var command = new ModifyFenceCommand(
+            Guid.Parse(request.FenceId),
+            request.Name,
+            request.RadiusInMeters,
+            Latitude: request.Latitude,
+            Longitude: request.Longitude);
+
+        var result = await modifyFenceHandler.Handle(command, context.CancellationToken);
+
+        if (result.IsFailure)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, string.Join("; ", result.Errors)));
+
+        return new ModifyFenceResponse();
     }
 
     public override async Task<DeleteFenceResponse> DeleteFence(DeleteFenceRequest request, ServerCallContext context)

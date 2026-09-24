@@ -5,6 +5,7 @@ package fences.v1;
 service Fences {
   rpc CreateFence (CreateFenceRequest) returns (CreateFenceResponse);
   rpc DeleteFence (DeleteFenceRequest) returns (DeleteFenceResponse);
+  rpc ModifyFence (ModifyFenceRequest) returns (ModifyFenceResponse);
 }
 
 message CreateFenceRequest {
@@ -25,4 +26,15 @@ message DeleteFenceRequest {
 }
 
 message DeleteFenceResponse {
+}
+
+message ModifyFenceRequest{
+  string fence_id = 1;
+  string name = 2;
+  int32 radius_in_meters = 3;
+  double latitude = 4;
+  double longitude = 5;
+}
+
+message ModifyFenceResponse{
 }
