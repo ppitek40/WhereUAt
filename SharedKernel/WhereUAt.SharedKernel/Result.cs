@@ -109,4 +109,18 @@ public class Result
     {
         Errors.Add(error);
     }
+
+    public static bool AnyFailed(Result[] results, out Result failedResult)
+    {
+        var fails = results.Where(r => r.IsFailure).ToArray();
+
+        if (fails.Length != 0)
+        {
+            failedResult = Result.Failure(fails.SelectMany(f => f.Errors.Select(e => e.Message)));
+            return true;
+        }
+
+        failedResult = null!;
+        return false;
+    }
 }
