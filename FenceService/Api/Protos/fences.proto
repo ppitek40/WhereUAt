@@ -4,6 +4,7 @@ package fences.v1;
 
 service Fences {
   rpc CreateFence (CreateFenceRequest) returns (CreateFenceResponse);
+  rpc DeleteFence (DeleteFenceRequest) returns (DeleteFenceResponse);
 }
 
 message CreateFenceRequest {
@@ -17,4 +18,11 @@ message CreateFenceRequest {
 
 message CreateFenceResponse {
   string fence_id = 1;
+}
+
+message DeleteFenceRequest {
+  string fence_id = 1;  
+}
+
+message DeleteFenceResponse {
 }

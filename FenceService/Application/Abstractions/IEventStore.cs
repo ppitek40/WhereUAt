@@ -5,11 +5,12 @@ namespace Application.Abstractions;
 
 public interface IEventStore
 {
-    public Result Save<T>(
+    public Task<Result> SaveAsync<T>(
         Guid streamId,
         Type streamType,
         T eventData,
-        int version);
+        int version,
+        CancellationToken cancellationToken);
 
-    public Task<IList<EventStored<IFenceEvent>>> Get(Guid streamId);
+    public Task<IList<EventStored<IFenceEvent>>> GetAsync(Guid streamId, CancellationToken cancellationToken);
 }

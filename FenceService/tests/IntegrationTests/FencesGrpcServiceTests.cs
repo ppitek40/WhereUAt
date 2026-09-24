@@ -54,4 +54,26 @@ public class FencesGrpcServiceTests(FenceApiFactory factory) : IClassFixture<Fen
         var exception = await act.Should().ThrowAsync<RpcException>();
         exception.Which.StatusCode.Should().Be(StatusCode.InvalidArgument);
     }
+
+    [Fact]
+    public async Task DeleteFence_WithValidGuid_ShouldBeSuccess()
+    {
+        // arrange
+        var client = factory.CreateGrpcClient();
+
+        var command = new CreateFenceRequest
+        {
+            Name = "Home2",
+            CreatorId = Guid.CreateVersion7().ToString(),
+            TargetId = Guid.CreateVersion7().ToString(),
+            RadiusInMeters = 100,
+            Latitude = 52.2297,
+            Longitude = 21.0122
+        };
+        var createResponse = await client.CreateFenceAsync(command);
+            
+        // act + assert
+        var func = async () =>  await client.DeleteFenceAsync(new DeleteFenceRequest(){FenceId = createResponse.FenceId});
+        await func.Should().NotThrowAsync();
+    }
 }

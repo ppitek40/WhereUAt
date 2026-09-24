@@ -9,11 +9,12 @@ namespace Infrastructure;
 
 public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
 {
-    public Result Save<T>(
+    public async Task<Result> SaveAsync<T>(
         Guid streamId,
         Type streamType,
         T eventData,
-        int version)
+        int version,
+        CancellationToken cancellationToken)
     {
         var @event = new Event
         {
@@ -25,19 +26,19 @@ public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
             Published = false,
             Version = version
         };
-
-        mongoDatabase.GetCollection<BsonDocument>("fences")
-            .InsertOne(@event.ToBsonDocument());
+    
+        await mongoDatabase.GetCollection<BsonDocument>("fences")
+            .InsertOneAsync(@event.ToBsonDocument(), cancellationToken: cancellationToken);
 
         return Result.Success();
     }
 
-    public async Task<IList<EventStored<IFenceEvent>>> Get(Guid streamId)
+    public async Task<IList<EventStored<IFenceEvent>>> GetAsync(Guid streamId, CancellationToken cancellationToken)
     {
         var collection = mongoDatabase.GetCollection<Event>("fences");
 
         var events = await collection.Find(x => x.StreamId.ToString() == streamId.ToString())
-            .Sort(Builders<Event>.Sort.Ascending(x => x.Version)).ToListAsync();
+            .Sort(Builders<Event>.Sort.Ascending(x => x.Version)).ToListAsync(cancellationToken);
 
     return events.Select(x =>
     {

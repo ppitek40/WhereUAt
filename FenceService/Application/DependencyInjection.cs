@@ -6,7 +6,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<CreateFenceCommandHandler>();
+        services.AddScoped<CreateFenceHandler>();
+        services.AddScoped<DeleteFenceHandler>();
 
         return services;
     }

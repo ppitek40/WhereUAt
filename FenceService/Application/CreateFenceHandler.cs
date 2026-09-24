@@ -14,11 +14,11 @@ public record CreateFenceCommand(
     double Longitude
 );
 
-public class CreateFenceCommandHandler(
+public class CreateFenceHandler(
     IPermissionService permissionService,
     IEventStore eventStore)
 {
-    public Result<FenceId> Handle(CreateFenceCommand command)
+    public async Task<Result<FenceId>> Handle(CreateFenceCommand command, CancellationToken cancellationToken)
     {
         var name = FenceName.TryFrom(command.Name).ToResult();
         var radius = RadiusInMeters.TryFrom(command.RadiusInMeters).ToResult();
@@ -50,11 +50,12 @@ public class CreateFenceCommandHandler(
 
         var fenceCreatedEvent = fenceCreatedResult.Value!;
 
-        var saveResult = eventStore.Save(
+        var saveResult = await eventStore.SaveAsync(
             fenceCreatedEvent.Id.Value,
             typeof(Fence),
             fenceCreatedEvent,
-            1);
+            1,
+            cancellationToken);
 
         if (saveResult.IsFailure)
             return Result<FenceId>.From(saveResult);
