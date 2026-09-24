@@ -1,7 +1,6 @@
 using Application.Abstractions;
 using Domain.Models;
 using Domain.ValueObjects;
-using Vogen;
 using WhereUAt.SharedKernel;
 
 namespace Application;
@@ -21,40 +20,29 @@ public class CreateFenceCommandHandler(
 {
     public Result<FenceId> Handle(CreateFenceCommand command)
     {
-        var name = FenceName.TryFrom(command.Name);
-        var radius = RadiusInMeters.TryFrom(command.RadiusInMeters);
-        var latitude = Latitude.TryFrom(command.Latitude);
-        var longitude = Longitude.TryFrom(command.Longitude);
-        var creatorId = CreatorId.TryFrom(command.CreatorId);
-        var targetId = TargetId.TryFrom(command.TargetId);
+        var name = FenceName.TryFrom(command.Name).ToResult();
+        var radius = RadiusInMeters.TryFrom(command.RadiusInMeters).ToResult();
+        var latitude = Latitude.TryFrom(command.Latitude).ToResult();
+        var longitude = Longitude.TryFrom(command.Longitude).ToResult();
+        var creatorId = CreatorId.TryFrom(command.CreatorId).ToResult();
+        var targetId = TargetId.TryFrom(command.TargetId).ToResult();
 
-        var errors = new[]
-            {
-                name.Error,
-                radius.Error,
-                latitude.Error,
-                longitude.Error,
-                creatorId.Error,
-                targetId.Error
-            }
-            .Where(e => e != Validation.Ok)
-            .Select(e => e.ErrorMessage)
-            .ToArray();
+        if (Result.AnyFailed([name, radius, latitude, longitude, creatorId], out var failedResult))
+        {
+            return Result<FenceId>.From(failedResult);
+        } 
 
-        if (errors.Length != 0)
-            return Result<FenceId>.Failure(errors);
-
-        var canWatchResult = permissionService.CanWatch(creatorId.ValueObject, targetId.ValueObject);
+        var canWatchResult = permissionService.CanWatch(creatorId.Value, targetId.Value);
 
         if (canWatchResult.IsFailure)
             return Result<FenceId>.From(canWatchResult);
 
         var fenceCreatedResult = Fence.Create(
-            name.ValueObject,
-            creatorId.ValueObject,
-            targetId.ValueObject,
-            radius.ValueObject,
-            new Location(latitude.ValueObject, longitude.ValueObject)
+            name.Value,
+            creatorId.Value,
+            targetId.Value,
+            radius.Value,
+            new Location(latitude.Value, longitude.Value)
         );
 
         if (fenceCreatedResult.IsFailure)
