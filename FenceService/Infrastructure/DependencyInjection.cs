@@ -24,8 +24,17 @@ public static class DependencyInjection
         services.AddSingleton<IMongoDatabase>(serviceProvider =>
         {
             var settings = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value;
-            return new MongoClient(settings.ConnectionString)
+            var database = new MongoClient(settings.ConnectionString)
                 .GetDatabase(settings.DatabaseName);
+
+            var keys = Builders<Event>.IndexKeys
+                .Ascending(e => e.StreamId)
+                .Ascending(e => e.Version);
+
+            database.GetCollection<Event>("fences")
+                .Indexes.CreateOne(new CreateIndexModel<Event>(keys, new CreateIndexOptions { Unique = true }));
+
+            return database;
         });
 
         return services;

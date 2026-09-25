@@ -27,8 +27,15 @@ public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
             Version = version
         };
     
-        await mongoDatabase.GetCollection<BsonDocument>("fences")
-            .InsertOneAsync(@event.ToBsonDocument(), cancellationToken: cancellationToken);
+        try
+        {
+            await mongoDatabase.GetCollection<BsonDocument>("fences")
+                .InsertOneAsync(@event.ToBsonDocument(), cancellationToken: cancellationToken);
+        }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return Result.Failure($"Concurrency conflict: stream {streamId} already has version {version}.");
+        }
 
         return Result.Success();
     }
@@ -40,13 +47,16 @@ public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
         var events = await collection.Find(x => x.StreamId.ToString() == streamId.ToString())
             .Sort(Builders<Event>.Sort.Ascending(x => x.Version)).ToListAsync(cancellationToken);
 
-    return events.Select(x =>
-    {
-        var eventType = Type.GetType(x.EventType)
-            ?? throw new InvalidOperationException($"Cannot resolve event type '{x.EventType}'.");
+    return
+    [
+        .. events.Select(x =>
+        {
+            var eventType = Type.GetType(x.EventType)
+                            ?? throw new InvalidOperationException($"Cannot resolve event type '{x.EventType}'.");
 
-        var eventData = (IFenceEvent)BsonSerializer.Deserialize(x.EventData, eventType);
+            var eventData = (IFenceEvent)BsonSerializer.Deserialize(x.EventData, eventType);
 
-        return new EventStored<IFenceEvent>(eventData, x.Version, eventType);
-    }).ToList();}
+            return new EventStored<IFenceEvent>(eventData, x.Version, eventType);
+        })
+    ];}
 }

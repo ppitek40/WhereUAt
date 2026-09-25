@@ -7,7 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace IntegrationTests;
 
-public class FencesGrpcServiceTests(FenceApiFactory factory) : IClassFixture<FenceApiFactory>
+[Collection(nameof(FenceApiCollection))]
+public class FencesGrpcServiceTests(FenceApiFactory factory)
 {
     [Fact]
     public async Task CreateFence_WithValidRequest_ReturnsFenceId()
