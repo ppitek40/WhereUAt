@@ -46,7 +46,7 @@ public class ModifyFenceHandler(IEventStore eventStore)
             fence.Id.Value,
             typeof(Fence),
             modifyEventResult.Value,
-            1,
+            fenceEvents.Last().Version + 1,
             cancellationToken);
 
         if (saveResult.IsFailure)

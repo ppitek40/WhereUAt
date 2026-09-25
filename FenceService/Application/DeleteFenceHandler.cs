@@ -27,7 +27,7 @@ public class DeleteFenceHandler(IEventStore eventStore)
         var saveResult = await eventStore.SaveAsync(fenceIdResult.Value.Value,
             typeof(Fence),
             deleteEventResult.Value,
-            1,
+            fenceEvents.Last().Version + 1,
             cancellationToken);
         
         if (saveResult.IsFailure)

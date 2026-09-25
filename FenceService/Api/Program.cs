@@ -12,7 +12,7 @@ builder.Services
     .AddInfrastructure()
     .AddApplication();
 
-builder.Services.AddGrpc(options => options.EnableDetailedErrors = true);
+builder.Services.AddGrpc(options => options.EnableDetailedErrors = builder.Environment.IsDevelopment());
 
 var app = builder.Build();
 
