@@ -12,10 +12,10 @@ builder.Services
     .AddInfrastructure()
     .AddApplication();
 
+builder.Services.AddHostedService<LocationUpdatedConsumerService>();
 builder.Services.AddGrpc(options => options.EnableDetailedErrors = true);
 
 var app = builder.Build();
-
 app.MapGrpcService<FencesGrpcService>();
 
 app.Run();
