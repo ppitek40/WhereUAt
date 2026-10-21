@@ -23,6 +23,7 @@ Tracked as ADRs in `docs/adr/` (see `docs/adr/README.md` for the index) — read
 - Services are built in .NET / C#.
 - Apache Kafka is the event backbone for cross-service messaging.
 - Fence and Alert use hand-rolled event sourcing on MongoDB.
+- Kafka event contracts are Protobuf schemas in a Schema Registry (`BACKWARD_TRANSITIVE`; breaking changes go to a new `.vN` topic). Plain JSON is temporarily allowed while the first producer/consumer flow is debugged.
 - Cloud (Azure-leaning) and IaC tooling (Terraform vs. Kubernetes/Helm) are still open — don't treat either as decided.
 
 ## Do not write the implementation

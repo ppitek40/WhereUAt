@@ -19,11 +19,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Confluent.SchemaRegistry" Version="2.16.0" />
+      <PackageReference Include="Confluent.SchemaRegistry.Serdes.Protobuf" Version="2.16.0" />
       <PackageReference Include="Grpc.AspNetCore" Version="2.84.0" />
     </ItemGroup>
 
     <ItemGroup>
         <Protobuf Include="Protos\fences.proto" GrpcServices="Server" Access="Internal" />
+        <Protobuf Include="Protos\location_updated.proto" GrpcServices="None" Access="public" />
     </ItemGroup>
 
 </Project>

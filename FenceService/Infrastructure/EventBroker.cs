@@ -1,5 +1,3 @@
-using WhereUAt.SharedKernel;
-
 namespace Infrastructure;
 
 public class EventBroker

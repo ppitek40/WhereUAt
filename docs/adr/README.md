@@ -20,3 +20,4 @@ An ADR captures a single significant, hard-to-reverse technical decision: what w
 | [0005](0005-result-pattern-for-domain-errors.md) | Result pattern for expected domain errors, kept in a shared kernel | Proposed | 2026-08-03 |
 | [0006](0006-grpc-internal-rest-external.md) | gRPC for internal service calls, REST for the external-facing API | Accepted | 2026-08-19 |
 | [0007](0007-local-kafka-kraft-single-node.md) | Single-node Apache Kafka in KRaft mode for local development | Proposed | 2026-10-14 |
+| [0008](0008-schema-registry-for-event-contracts.md) | Schema Registry for Kafka event contracts | Accepted | 2026-10-21 |

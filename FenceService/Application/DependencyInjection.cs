@@ -9,6 +9,7 @@ public static class DependencyInjection
         services.AddScoped<CreateFenceHandler>();
         services.AddScoped<ModifyFenceHandler>();
         services.AddScoped<DeleteFenceHandler>();
+        services.AddScoped<LocationUpdatedHandler>();
 
         return services;
     }

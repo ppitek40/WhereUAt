@@ -1,32 +1,33 @@
 using Confluent.Kafka;
-using Infrastructure;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry.Serdes;
+using Google.Protobuf;
 using WhereUAt.SharedKernel;
 
 namespace Api.Services;
 
-public abstract class EventConsumerService<T>(EventBroker eventBroker) : BackgroundService where T : class 
+public abstract class EventConsumerService<T>(IServiceScopeFactory serviceScopeFactory) : BackgroundService where T : class, IMessage<T>, new() 
 {
     protected abstract string TopicId { get; }
     protected abstract string GroupId { get; }
-    protected abstract Task<Result> Handle(IServiceProvider serviceProvider, T text);
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected abstract Task<Result> Handle(IServiceScopeFactory serviceScopeFactory, T text);
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig
+        var consumer = new ConsumerBuilder<string, T>(new ConsumerConfig
         {
             BootstrapServers = "localhost:9092",
             GroupId = GroupId,
             AutoOffsetReset = AutoOffsetReset.Earliest
-        }).Build();
+        }).SetValueDeserializer(new ProtobufDeserializer<T>().AsSyncOverAsync()).Build();
         consumer.Subscribe(TopicId);
         while (!stoppingToken.IsCancellationRequested)
         {
             var cr = consumer.Consume(stoppingToken);
             Console.WriteLine($"Consumed message '{cr.Message.Key}':{cr.Message.Value} at: '{cr.TopicPartitionOffset}'");
-            Handle(cr.Message)
+            await Handle(serviceScopeFactory, cr.Message.Value);
         }
         consumer.Close();
         consumer.Dispose();
-        return Task.CompletedTask;
     }
 
     public override void Dispose()
