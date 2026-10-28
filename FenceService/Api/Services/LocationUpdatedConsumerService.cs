@@ -1,11 +1,12 @@
 using Application;
+using Microsoft.Extensions.Options;
 using WhereUAt.Contracts.Location.V1;
 using WhereUAt.SharedKernel;
 
 namespace Api.Services;
 
-public class LocationUpdatedConsumerService(IServiceScopeFactory scopeFactory) 
-    : EventConsumerService<LocationUpdated>(scopeFactory)
+public class LocationUpdatedConsumerService(IServiceScopeFactory scopeFactory, IOptions<KafkaSettings> kafkaSettings)
+    : EventConsumerService<LocationUpdated>(scopeFactory, kafkaSettings)
 {
     protected override string TopicId => "location.location-updated.v1";
     protected override string GroupId => "location-updated.consumer";

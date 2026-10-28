@@ -23,6 +23,22 @@ services:
       timeout: 10s
       retries: 10
 
+  kafka-init:
+    image: apache/kafka:4.1.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        T=/opt/kafka/bin/kafka-topics.sh
+        B=kafka:29092
+        $$T --bootstrap-server $$B --create --if-not-exists \
+          --topic location.location-updated.v1 --partitions 3 --replication-factor 1
+        # one line per topic; keep this list as the single inventory of topics
+
   kafka-ui:
     image: ghcr.io/kafbat/kafka-ui:latest
     ports:
@@ -34,6 +50,7 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+
   schema-registry:
     image: confluentinc/cp-schema-registry:8.0.0
     container_name: schema-registry
@@ -53,3 +70,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+  
+  schema-init:
+    image: alpine:3.20
+    depends_on:
+      schema-registry:
+        condition: service_healthy
+    restart: "no"
+    volumes:
+        - ./FenceService/Api/Protos/location_updated.proto:/contracts/location/v1/location_updated.proto:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        apk add --no-cache curl jq > /dev/null
+        R=http://schema-registry:8081
+        register() {
+          jq -n --rawfile s "$$2" '{schemaType: "PROTOBUF", schema: $$s}' |
+            curl --fail-with-body -s -X POST \
+              -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+              --data @- "$$R/subjects/$$1/versions"
+          echo
+        }
+        register location.location-updated.v1-value /contracts/location/v1/location_updated.proto

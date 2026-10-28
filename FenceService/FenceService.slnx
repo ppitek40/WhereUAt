@@ -4,6 +4,7 @@
   <Project Path="Domain/Domain.csproj" />
   <Project Path="Infrastructure/Infrastructure.csproj" />
   <Folder Name="/Solution Items/">
+    <File Path="compose.full.yaml" />
     <File Path="compose.yaml" />
   </Folder>
   <Folder Name="/tests/">

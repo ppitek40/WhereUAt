@@ -72,3 +72,5 @@ Testing/
 bin/
 obj/
 .idea/
+
+.env

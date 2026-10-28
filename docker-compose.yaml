@@ -1,0 +1,7 @@
+name: whereuat
+
+include:
+- kafka.yaml
+- path:
+    - FenceService/compose.yaml
+    - FenceService/compose.full.yaml

@@ -7,15 +7,15 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Api/Api.csproj", "Api/"]
-RUN dotnet restore "Api/Api.csproj"
 COPY . .
+RUN --mount=type=secret,id=github_token \
+  GITHUB_TOKEN=$(cat /run/secrets/github_token) dotnet restore "Api/Api.csproj"
 WORKDIR "/src/Api"
-RUN dotnet build "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/build --no-restore
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false --no-restore
 
 FROM base AS final
 WORKDIR /app

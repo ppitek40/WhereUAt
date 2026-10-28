@@ -1,0 +1,14 @@
+services:
+  api:
+    environment:
+      Kafka__BootstrapServers: kafka:29092
+      Kafka__SchemaRegistryUrl: http://schema-registry:8081
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      schema-init:
+        condition: service_completed_successfully

@@ -9,6 +9,10 @@ builder.Services
         .GetSection(MongoDbSettings.SectionName));
 
 builder.Services
+    .Configure<KafkaSettings>(builder.Configuration
+        .GetSection(KafkaSettings.SectionName));
+
+builder.Services
     .AddInfrastructure()
     .AddApplication();
 
