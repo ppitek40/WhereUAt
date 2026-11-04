@@ -4,7 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-No service code exists yet — the repository currently contains only documentation (`README.md`, `docs/`). There are no build, lint, or test commands to run. Update this file with real commands as soon as the first service is scaffolded (see `docs/adr/0002-dotnet-for-microservices.md` for the chosen stack).
+One service exists so far: **FenceService** (.NET 10). It exposes a gRPC API for creating, modifying and deleting fences, stores Fence as an event-sourced aggregate in MongoDB, and consumes `LocationUpdated` events from Kafka. The other four contexts (User, Permission, Location, Alert) have no code yet.
+
+Repository layout:
+
+- `FenceService/`: solution `FenceService.slnx` with `Api` (gRPC host + Kafka consumer), `Application`, `Domain`, `Infrastructure`, `Sdk`, and `tests/` (`ApplicationTests`, `ArchitectureTests`, `IntegrationTests`).
+- `SharedKernel/`: `WhereUAt.SharedKernel` (`Result`/`Error`, see ADR-0005), published as a NuGet package to GitHub Packages and consumed from there, not as a project reference.
+- `kafka.yaml`: local Kafka (KRaft), Schema Registry, Kafka UI, and the `kafka-init` / `schema-init` containers that create topics and register schemas.
+- `docker-compose.yaml`: the full local stack. It includes `kafka.yaml` plus `FenceService/compose.yaml` and `FenceService/compose.full.yaml`.
+
+### Commands
+
+Restoring needs a `GITHUB_TOKEN` environment variable with `read:packages`, because `FenceService/nuget.config` pulls `WhereUAt.SharedKernel` from GitHub Packages. The Docker build passes it in as a build secret.
+
+```sh
+dotnet build FenceService/FenceService.slnx
+dotnet test FenceService/FenceService.slnx                       # IntegrationTests need Docker (Testcontainers MongoDB)
+dotnet test FenceService/FenceService.slnx --filter "FullyQualifiedName~<TestName>"
+
+docker compose up --build                                        # full stack from the repo root
+docker compose -f kafka.yaml up -d                               # Kafka + Schema Registry + Kafka UI only, e.g. to run the API from the IDE
+```
+
+Local ports: Kafka `9092` (host listener; containers use `kafka:29092`), Schema Registry `8081`, Kafka UI `8080`, MongoDB `27017`.
+
+There is no CI pipeline and no lint step yet.
 
 ## What this project is
 
