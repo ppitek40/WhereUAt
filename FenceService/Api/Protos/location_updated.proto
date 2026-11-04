@@ -10,5 +10,5 @@ message LocationUpdated {
   string user_id = 1;
   double latitude = 2;
   double longitude = 3;
-  google.protobuf.Timestamp occured_at = 4;
+  google.protobuf.Timestamp occurred_at = 4;
 }

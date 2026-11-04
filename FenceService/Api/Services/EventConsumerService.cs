@@ -15,7 +15,7 @@ public abstract class EventConsumerService<T>(
     protected abstract string GroupId { get; }
     protected abstract Task<Result> Handle(IServiceScopeFactory serviceScopeFactory, T text);
 
-    private IConsumer<string, T> _consumer = null!;
+    private IConsumer<string, T>? _consumer;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -23,27 +23,51 @@ public abstract class EventConsumerService<T>(
         {
             BootstrapServers = kafkaSettings.Value.BootstrapServers,
             GroupId = GroupId,
-            AutoOffsetReset = AutoOffsetReset.Earliest
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoOffsetStore = false
         }).SetValueDeserializer(new ProtobufDeserializer<T>().AsSyncOverAsync()).Build();
         _consumer.Subscribe(TopicId);
-        while (!stoppingToken.IsCancellationRequested)
+
+        try
         {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                var cr = _consumer.Consume(stoppingToken);
-                Console.WriteLine($"Consumed message '{cr.Message.Key}':{cr.Message.Value} at: '{cr.TopicPartitionOffset}'");
-                await Handle(serviceScopeFactory, cr.Message.Value);
+                try
+                {
+                    // TODO: Dead-letter topic. Today a failed message is skipped silently once a later
+                    // message stores its offset. Retry transient failures, then produce to <topic>.dlq
+                    // with error headers and StoreOffset. Pending ADR on poison-message handling.
+                    var consumeResult = _consumer.Consume(stoppingToken);
+                    Console.WriteLine($"Consumed message '{consumeResult.Message.Key}':{consumeResult.Message.Value} at: '{consumeResult.TopicPartitionOffset}'");
+                    var result = await Handle(serviceScopeFactory, consumeResult.Message.Value);
+
+                    if (result.IsSuccess)
+                        _consumer.StoreOffset(consumeResult);
+                    else
+                    {
+                        Console.WriteLine($"Failed to handle message '{consumeResult.Message.Key}':{consumeResult.Message.Value} at: '{consumeResult.TopicPartitionOffset}'");
+                    }
+
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    Console.WriteLine($"Consumer for {TopicId} stopping");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+        }
+        finally
+        {
+            _consumer?.Close();
         }
     }
 
     public override void Dispose()
     {
-        _consumer.Close();
-        _consumer.Dispose();
+        _consumer?.Dispose();
+        base.Dispose();
     }
 }
