@@ -64,7 +64,7 @@ Full domain narrative, aggregates, and business decision records: [`docs/domain/
 
 These are the advanced patterns the project intends to exercise; each will get its own ADR once evaluated rather than being decided upfront:
 
-- **CQRS read models** — beyond the Permissions Cache already in the diagram, whether `fence-service` needs its own materialized read model of fence definitions vs. querying on demand.
+- **CQRS read models**: beyond the Permissions Cache already in the diagram, whether `fence-service` needs its own materialized read model of fence definitions vs. querying on demand. [ADR-0010](../adr/0010-fence-lookup-by-target-index.md) proposes no read model for now: fence evaluation finds fences through an indexed query on `FenceCreated` events. A read model comes back on the table when a read-side use case needs fence definitions without loading aggregates.
 - **Saga / process manager** for the `User Deleted` fan-out cascade (must be reliable and idempotent across three services).
 - **API gateway implementation** — the diagram fixes its existence and role, not the tool (candidate: YARP). Its external surface (UI-facing) is REST/JSON and its internal calls into services (`Gateway <--> Fence`, etc.) are gRPC, per [ADR-0006](../adr/0006-grpc-internal-rest-external.md).
 - **Service-to-service auth** (likely mTLS or a service mesh, depending on the Kubernetes decision).
