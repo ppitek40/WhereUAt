@@ -15,7 +15,7 @@ public class LocationUpdatedConsumerService(IServiceScopeFactory scopeFactory, I
     {                                                                   
         using var scope = serviceScopeFactory.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<LocationUpdatedHandler>();
-        await handler.Handle(text.UserId.ToString());
+        await handler.Handle(text.UserId);
         return Result.Success();
     }
 }
