@@ -19,7 +19,7 @@ public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
         var @event = new Event
         {
             EventData = eventData.ToBsonDocument(),
-            EventType = typeof(T).AssemblyQualifiedName!,
+            EventType = eventData!.GetType().AssemblyQualifiedName!,
             StreamId =  streamId,
             StreamType = streamType.Name,
             PublishedAt = DateTime.UtcNow,

@@ -26,4 +26,24 @@ public readonly partial struct Longitude
     }
 }
 
-public readonly record struct Location(Latitude Lat, Longitude Lng);
+public readonly record struct Location(Latitude Lat, Longitude Lng)
+{
+    private const double EarthRadiusInMeters = 6_371_000;
+
+    public double DistanceTo(Location other)
+    {
+        var lat1 = ToRadians(Lat.Value);
+        var lat2 = ToRadians(other.Lat.Value);
+        var dLat = lat2 - lat1;
+        var dLng = ToRadians(other.Lng.Value - Lng.Value);
+
+        var a = Math.Pow(Math.Sin(dLat / 2), 2)
+                + Math.Cos(lat1) * Math.Cos(lat2) * Math.Pow(Math.Sin(dLng / 2), 2);
+
+        var c = 2 * Math.Asin(Math.Sqrt(Math.Clamp(a, 0, 1)));
+
+        return EarthRadiusInMeters * c;
+    }
+
+    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
+}

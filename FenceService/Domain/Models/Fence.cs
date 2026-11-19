@@ -10,10 +10,9 @@ public class Fence
     public FenceName Name { get; private set; }
     public CreatorId CreatorId { get; private set; }
     public TargetId TargetId { get; private set; }
-    public RadiusInMeters RadiusInMeters { get; private set; }
-    public Location Location { get; private set; }
+    public FenceArea FenceArea { get; private set; }
     public bool IsDeleted { get; private set; }
-    public bool IsCrossed { get; private set; }
+    public TargetPosition TargetPosition { get; private set; }
 
     private Fence()
     {
@@ -53,7 +52,6 @@ public class Fence
             return Result<FenceModified>.Failure("Fence is already deleted.");
 
         var @event = new FenceModified(
-            Id,
             name,
             radiusInMeters,
             location);
@@ -68,44 +66,37 @@ public class Fence
         if (IsDeleted)
             return Result<FenceDeleted>.Failure("Fence is already deleted.");
 
-        var @event = new FenceDeleted(Id);
+        var @event = new FenceDeleted();
 
         Apply(@event);
 
         return @event;
     }
 
-    public Result<FenceCrossed> Cross()
+    public Result<IFenceEvent?> Evaluate(Location targetLocation)
     {
         if (IsDeleted)
-            return Result<FenceCrossed>.Failure("Fence is already deleted.");
+            return Result<IFenceEvent?>.Failure("Fence is deleted.");
 
-        if (IsCrossed)
-            return Result<FenceCrossed>.Failure("Fence is already crossed.");
+        var newPosition = FenceArea.Contains(targetLocation)
+            ? TargetPosition.Inside
+            : TargetPosition.Outside;
 
-        var @event = new FenceCrossed(Id, Name, CreatorId, TargetId);
+        IFenceEvent? @event = (TargetPosition, newPosition) switch
+        {
+            (TargetPosition.Unknown, _) => new FenceTargetPositionEstablished(newPosition),
+            (TargetPosition.Outside, TargetPosition.Inside) => new FenceEntered(),
+            (TargetPosition.Inside, TargetPosition.Outside) => new FenceExited(),
+            _ => null
+        };
 
-        Apply(@event);
+        if (@event is not null)
+            Apply(@event);
 
-        return @event;
+        return Result<IFenceEvent?>.Success(@event);
     }
 
-    public Result<FenceUncrossed> Uncross()
-    {
-        if (IsDeleted)
-            return Result<FenceUncrossed>.Failure("Fence is already deleted.");
-
-        if (!IsCrossed)
-            return Result<FenceUncrossed>.Failure("Fence is already not crossed.");
-
-        var @event = new FenceUncrossed(Id);
-
-        Apply(@event);
-
-        return @event;
-    }
-
-    private void Apply(FenceDeleted @event)
+    private void Apply(FenceDeleted _)
     {
         IsDeleted = true;
     }
@@ -116,58 +107,66 @@ public class Fence
         Name = @event.Name;
         CreatorId = @event.CreatorId;
         TargetId = @event.TargetId;
-        RadiusInMeters = @event.RadiusInMeters;
-        Location = @event.Location;
+        FenceArea = new FenceArea(@event.Location, @event.RadiusInMeters);
+        TargetPosition = TargetPosition.Unknown;
     }
 
     private void Apply(FenceModified @event)
     {
         Name = @event.Name;
-        RadiusInMeters = @event.RadiusInMeters;
-        Location = @event.Location;
+        FenceArea = new FenceArea(@event.Location, @event.RadiusInMeters);
+        TargetPosition = TargetPosition.Unknown;
     }
 
-    private void Apply(FenceCrossed @event)
+    private void Apply(FenceEntered _)
     {
-        IsCrossed = true;
+        TargetPosition = TargetPosition.Inside;
     }
 
-    private void Apply(FenceUncrossed @event)
+    private void Apply(FenceExited _)
     {
-        IsCrossed = false;
+        TargetPosition = TargetPosition.Outside;
+    }
+
+    private void Apply(FenceTargetPositionEstablished @event)
+    {
+        TargetPosition = @event.TargetPosition;
     }
 
     public static Fence Load(ICollection<IFenceEvent> events)
-    {                                    
+    {
         if (events == null || events.Count == 0)
             throw new ArgumentNullException(nameof(events));
 
         var fence = new Fence();
-        foreach(var @event in events)
-            fence.When(@event);
+        foreach (var @event in events)
+            fence.Apply(@event);
 
         return fence;
     }
 
-    private void When(IFenceEvent @event)
+    private void Apply(IFenceEvent @event)
     {
         switch (@event)
         {
             case FenceCreated e:
-            Apply(e);
-            break;
-            case FenceUncrossed e:
-            Apply(e);
-            break;
+                Apply(e);
+                break;
+            case FenceExited e:
+                Apply(e);
+                break;
             case FenceDeleted e:
-            Apply(e);
-            break;
+                Apply(e);
+                break;
             case FenceModified e:
-            Apply(e);
-            break;            
-            case FenceCrossed e:
-            Apply(e);
-            break;
+                Apply(e);
+                break;
+            case FenceEntered e:
+                Apply(e);
+                break;
+            case FenceTargetPositionEstablished e:
+                Apply(e);
+                break;
             default:
                 throw new InvalidOperationException($"Unknown event type: {@event.GetType().Name}");
         }

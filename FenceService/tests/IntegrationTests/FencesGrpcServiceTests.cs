@@ -94,9 +94,9 @@ public class FencesGrpcServiceTests(FenceApiFactory factory) : IClassFixture<Fen
         var fence = Fence.Load([.. events.Select(@event => @event.EventData)]);
 
         fence.Name.Value.Should().Be(modifiedRequest.Name);
-        fence.Location.Lat.Value.Should().Be(modifiedRequest.Latitude);
-        fence.Location.Lng.Value.Should().Be(modifiedRequest.Longitude);
-        fence.RadiusInMeters.Value.Should().Be(modifiedRequest.RadiusInMeters);
+        fence.FenceArea.Center.Lat.Value.Should().Be(modifiedRequest.Latitude);
+        fence.FenceArea.Center.Lng.Value.Should().Be(modifiedRequest.Longitude);
+        fence.FenceArea.RadiusInMeters.Value.Should().Be(modifiedRequest.RadiusInMeters);
     }
 
     [Fact]
