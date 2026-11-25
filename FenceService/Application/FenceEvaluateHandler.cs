@@ -12,10 +12,30 @@ public class FenceEvaluateHandler(IEventStore eventStore)
     public async Task<Result> Handle(FenceEvaluateCommand request, CancellationToken cancellationToken)
     {
         var fenceEvents = await eventStore.GetAsync(request.FenceId, cancellationToken);
-        var fence = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
-        fence.Evaluate(request.TargetLocation);
+        var fenceResult = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
 
-        //TODO: MONGO
+        if (fenceResult.IsFailure)
+            return fenceResult;
+
+        var fenceEvaluateResult = fenceResult.Value!
+            .Evaluate(request.TargetLocation);
+
+        if (fenceEvaluateResult.IsFailure)
+            return fenceEvaluateResult;
+
+        if (fenceEvaluateResult.Value == null)
+            return Result.Success();
+
+        var saveResult = await eventStore.SaveAsync(
+            fenceResult.Value!.Id.Value,
+            typeof(Fence),
+            fenceEvaluateResult.Value,
+            fenceEvents.Last().version + 1,
+            cancellationToken);
+
+        if (saveResult.IsFailure)
+            return Result<FenceId>.From(saveResult);
+
         return Result.Success();
     }
 }

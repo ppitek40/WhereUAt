@@ -17,9 +17,12 @@ public class DeleteFenceHandler(IEventStore eventStore)
             return fenceIdResult;
 
         var fenceEvents = await eventStore.GetAsync(fenceIdResult.Value.Value, cancellationToken);
-        var fence = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
+        var fenceResult = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
 
-        var deleteEventResult = fence.Delete();
+        if (fenceResult.IsFailure)
+            return fenceResult;
+
+        var deleteEventResult = fenceResult.Value!.Delete();
 
         if (deleteEventResult.IsFailure)
             return deleteEventResult;
@@ -27,7 +30,7 @@ public class DeleteFenceHandler(IEventStore eventStore)
         var saveResult = await eventStore.SaveAsync(fenceIdResult.Value.Value,
             typeof(Fence),
             deleteEventResult.Value,
-            1,
+            fenceEvents.Last().version + 1,
             cancellationToken);
         
         if (saveResult.IsFailure)

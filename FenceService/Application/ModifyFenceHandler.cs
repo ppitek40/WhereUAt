@@ -24,17 +24,18 @@ public class ModifyFenceHandler(IEventStore eventStore)
         var longitude = Longitude.TryFrom(command.Longitude).ToResult();
 
         if (Result.AnyFailed([name, radiusInMeter, latitude, longitude], out var failedResult))
-        {
             return Result<FenceId>.From(failedResult);
-        }
 
         if (fenceIdResult.IsFailure)
             return fenceIdResult;
 
         var fenceEvents = await eventStore.GetAsync(fenceIdResult.Value.Value, cancellationToken);
-        var fence = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
+        var fenceResult = Fence.Load([.. fenceEvents.Select(x => x.EventData)]);
 
-        var modifyEventResult = fence.Modify(
+        if (fenceResult.IsFailure)
+            return fenceResult;
+
+        var modifyEventResult = fenceResult.Value!.Modify(
             name.Value,
             radiusInMeter.Value,
             new Location(latitude.Value, longitude.Value));
@@ -43,10 +44,10 @@ public class ModifyFenceHandler(IEventStore eventStore)
             return modifyEventResult;
 
         var saveResult = await eventStore.SaveAsync(
-            fence.Id.Value,
+            fenceResult.Value.Id.Value,
             typeof(Fence),
             modifyEventResult.Value,
-            1,
+            fenceEvents.Last().version + 1,
             cancellationToken);
 
         if (saveResult.IsFailure)

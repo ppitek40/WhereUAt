@@ -91,7 +91,7 @@ public class FencesGrpcServiceTests(FenceApiFactory factory) : IClassFixture<Fen
         var eventStore = scope.ServiceProvider.GetRequiredService<IEventStore>();
 
         var events = await eventStore.GetAsync(Guid.Parse(createResponse.FenceId), CancellationToken.None);
-        var fence = Fence.Load([.. events.Select(@event => @event.EventData)]);
+        var fence = Fence.Load([.. events.Select(@event => @event.EventData)]).Value!;
 
         fence.Name.Value.Should().Be(modifiedRequest.Name);
         fence.FenceArea.Center.Lat.Value.Should().Be(modifiedRequest.Latitude);

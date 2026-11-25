@@ -133,10 +133,10 @@ public class Fence
         TargetPosition = @event.TargetPosition;
     }
 
-    public static Fence Load(ICollection<IFenceEvent> events)
+    public static Result<Fence> Load(ICollection<IFenceEvent>? events)
     {
         if (events == null || events.Count == 0)
-            throw new ArgumentNullException(nameof(events));
+            return Result.Failure<Fence>("Fence not found");
 
         var fence = new Fence();
         foreach (var @event in events)

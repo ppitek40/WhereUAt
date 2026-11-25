@@ -29,7 +29,7 @@ public class EventStoreTests(FenceApiFactory factory) : IClassFixture<FenceApiFa
 
             var createdEvent = Created();
             await eventStore.SaveAsync(createdEvent.Id.Value, typeof(Fence), createdEvent, 1, CancellationToken.None);
-            var fence = Fence.Load([createdEvent]);
+            var fence = Fence.Load([createdEvent]).Value!;
 
             var e1 = fence.Evaluate(Center);
             await eventStore.SaveAsync(fence.Id.Value, typeof(Fence), e1.Value, 2, CancellationToken.None);

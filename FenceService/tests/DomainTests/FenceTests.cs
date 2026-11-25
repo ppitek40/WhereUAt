@@ -41,7 +41,7 @@ public class FenceTests
     public void Modify_WhenFenceDeleted_ReturnsFailure()
     {
         // given
-        var fence = Fence.Load([Created(), new FenceDeleted()]);
+        var fence = Fence.Load([Created(), new FenceDeleted()]).Value!;
 
         // when
         var result = fence.Modify(FenceName.From("New"), RadiusInMeters.From(50), FarAway);
@@ -55,7 +55,7 @@ public class FenceTests
     public void Delete_WhenFenceAlreadyDeleted_ReturnsFailure()
     {
         // given
-        var fence = Fence.Load([Created(), new FenceDeleted()]);
+        var fence = Fence.Load([Created(), new FenceDeleted()]).Value!;
 
         // when
         var result = fence.Delete();
@@ -71,7 +71,7 @@ public class FenceTests
         var fence = Fence.Load([
             Created(),
             new FenceTargetPositionEstablished(TargetPosition.Outside)
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(Center);
@@ -89,7 +89,7 @@ public class FenceTests
         var fence = Fence.Load([
             Created(),
             new FenceTargetPositionEstablished(TargetPosition.Inside)
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(FarAway);
@@ -106,7 +106,7 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(Center);
@@ -123,7 +123,7 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(FarAway);
@@ -141,7 +141,7 @@ public class FenceTests
         var fence = Fence.Load([
             Created(),
             new FenceTargetPositionEstablished(TargetPosition.Outside)
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(FarAway);
@@ -159,7 +159,7 @@ public class FenceTests
         var fence = Fence.Load([
             Created(),
             new FenceTargetPositionEstablished(TargetPosition.Inside)
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(Center);
@@ -178,7 +178,7 @@ public class FenceTests
             Created(),
             new FenceTargetPositionEstablished(TargetPosition.Outside),
             new FenceModified(FenceName.From("Home"), RadiusInMeters.From(100), FarAway)
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(FarAway);
@@ -197,7 +197,7 @@ public class FenceTests
         var fence = Fence.Load([
             Created(),
             new FenceDeleted()
-        ]);
+        ]).Value!;
 
         // when
         var result = fence.Evaluate(Center);
