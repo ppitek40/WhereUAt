@@ -13,6 +13,7 @@ public class Fence
     public FenceArea FenceArea { get; private set; }
     public bool IsDeleted { get; private set; }
     public TargetPosition TargetPosition { get; private set; }
+    public DateTimeOffset? LastEvaluatedAt { get; private set; }
 
     private Fence()
     {
@@ -73,10 +74,10 @@ public class Fence
         return @event;
     }
 
-    public Result<IFenceEvent?> Evaluate(Location targetLocation)
+    public Result<IFenceEvent?> Evaluate(Location targetLocation, DateTimeOffset occurredAt)
     {
-        if (IsDeleted)
-            return Result<IFenceEvent?>.Failure("Fence is deleted.");
+        if (IsDeleted || occurredAt < LastEvaluatedAt)
+            return Result<IFenceEvent?>.Success(null);
 
         var newPosition = FenceArea.Contains(targetLocation)
             ? TargetPosition.Inside
@@ -84,9 +85,9 @@ public class Fence
 
         IFenceEvent? @event = (TargetPosition, newPosition) switch
         {
-            (TargetPosition.Unknown, _) => new FenceTargetPositionEstablished(newPosition),
-            (TargetPosition.Outside, TargetPosition.Inside) => new FenceEntered(),
-            (TargetPosition.Inside, TargetPosition.Outside) => new FenceExited(),
+            (TargetPosition.Unknown, _) => new FenceTargetPositionEstablished(newPosition, occurredAt),
+            (TargetPosition.Outside, TargetPosition.Inside) => new FenceEntered(occurredAt),
+            (TargetPosition.Inside, TargetPosition.Outside) => new FenceExited(occurredAt),
             _ => null
         };
 
@@ -118,19 +119,22 @@ public class Fence
         TargetPosition = TargetPosition.Unknown;
     }
 
-    private void Apply(FenceEntered _)
+    private void Apply(FenceEntered @event)
     {
         TargetPosition = TargetPosition.Inside;
+        LastEvaluatedAt = @event.OccurredAt;
     }
 
-    private void Apply(FenceExited _)
+    private void Apply(FenceExited @event)
     {
         TargetPosition = TargetPosition.Outside;
+        LastEvaluatedAt = @event.OccurredAt;
     }
 
     private void Apply(FenceTargetPositionEstablished @event)
     {
         TargetPosition = @event.TargetPosition;
+        LastEvaluatedAt = @event.OccurredAt;
     }
 
     public static Result<Fence> Load(ICollection<IFenceEvent>? events)

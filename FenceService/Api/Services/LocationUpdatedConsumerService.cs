@@ -11,11 +11,16 @@ public class LocationUpdatedConsumerService(IServiceScopeFactory scopeFactory, I
     protected override string TopicId => "location.location-updated.v1";
     protected override string GroupId => "location-updated.consumer";
 
-    protected override async Task<Result> Handle(IServiceScopeFactory serviceScopeFactory, LocationUpdated text)
-    {                                                                   
+    protected override async Task<Result> Handle(IServiceScopeFactory serviceScopeFactory, LocationUpdated @event)
+    {
         using var scope = serviceScopeFactory.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<LocationUpdatedHandler>();
-        await handler.Handle(text.UserId);
+        await handler.Handle(new LocationUpdatedCommand(
+            Guid.Parse(@event.UserId),
+            @event.Latitude,
+            @event.Longitude,
+            @event.OccurredAt.ToDateTimeOffset()));
+
         return Result.Success();
     }
 }

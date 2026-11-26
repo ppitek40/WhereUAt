@@ -13,4 +13,5 @@ public interface IEventStore
         CancellationToken cancellationToken);
 
     public Task<IList<EventStored<IFenceEvent>>> GetAsync(Guid streamId, CancellationToken cancellationToken);
+    Task<IList<FenceInfo>> GetFences(Guid userId, CancellationToken cancellationToken);
 }

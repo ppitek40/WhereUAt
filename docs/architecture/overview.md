@@ -25,11 +25,11 @@ flowchart LR
     Kafka --> LocState[location-service: State]
     LocState <--> LocCache[(Redis)]
     LocState <--> LocDB[(DB)]
-    LocState -->|LocationUpdated, post-dedup| Perm[permission-service: Privacy Filter]
+    LocState -->|LocationUpdated, post-dedup| Fence[fence-service: GeoFence]
+    Fence -.->|CanWatch per fence, mechanism TBD| Perm[permission-service]
     Perm <--> PermCache[(Redis: Permissions Cache)]
     Perm <--> PermDB[(DB)]
-    Perm -->|permission-checked location| Fence[fence-service: GeoFence]
-    Fence -->|FenceCrossed| Alert[alert-service]
+    Fence -->|FenceEntered / FenceExited| Alert[alert-service]
     Alert --> SES[SES / email]
     Alert --> UI[UI]
 
@@ -45,7 +45,11 @@ flowchart LR
     OSM[OpenStreetMap] --> UI
 ```
 
-The key property this design enforces (per BDR-002): permission is re-checked on *every* location update, in one place (`permission-service`'s Privacy Filter), before that update reaches `fence-service` — not just when serving reads. `location-service` rejects ~90% of raw pings that carry no positional change before anything downstream ever sees them.
+The key property this design enforces (per [BDR-002](../domain/event-storming-summary.md#bdr-002-permission-enforced-at-evaluation-time-not-cascaded-on-revocation)): permission is re-checked on *every* location update, not just when serving reads or creating a fence. `location-service` rejects ~90% of raw pings that carry no positional change before anything downstream ever sees them.
+
+The re-check happens **inside `fence-service`, once per fence**, during evaluation. For each fence on the updated user, `LocationUpdatedHandler` calls `IPermissionService.CanWatch(creatorId, targetId)` and skips the fence if the watcher no longer has permission. The fence stays in place, so it becomes active again if permission is re-granted. An earlier draft of this diagram put a Privacy Filter in `permission-service` in front of `fence-service`. It was dropped because permission is a property of a watcher–target pair, and a single location update fans out to several watchers' fences. Only fence evaluation knows which watchers are involved. Fence lookup and evaluation are described in [ADR-0010](../adr/0010-fence-lookup-by-target-index.md).
+
+How `fence-service` gets the permission state is **not yet decided**. Today `CanWatch` is a stub that always allows. See "Cross-cutting concerns" below.
 
 Full domain narrative, aggregates, and business decision records: [`docs/domain/event-storming-summary.md`](../domain/event-storming-summary.md).
 
@@ -65,10 +69,15 @@ Full domain narrative, aggregates, and business decision records: [`docs/domain/
 These are the advanced patterns the project intends to exercise; each will get its own ADR once evaluated rather than being decided upfront:
 
 - **CQRS read models**: beyond the Permissions Cache already in the diagram, whether `fence-service` needs its own materialized read model of fence definitions vs. querying on demand. [ADR-0010](../adr/0010-fence-lookup-by-target-index.md) proposes no read model for now: fence evaluation finds fences through an indexed query on `FenceCreated` events. A read model comes back on the table when a read-side use case needs fence definitions without loading aggregates.
+- **How `fence-service` reads permission state** for the per-fence `CanWatch` check. Candidates:
+  - a synchronous gRPC call to `permission-service`, backed by its Permissions Cache. Always up to date, but it couples the hot path to that service being available.
+  - a local projection in `fence-service`, built from `PermissionGranted` / `PermissionRevoked` / `PermissionExpired` events on Kafka. It keeps the path fully event-driven, but it is eventually consistent: a fence may still alert briefly after a revocation.
+
+  Needs an ADR before `PermissionService` is implemented.
 - **Saga / process manager** for the `User Deleted` fan-out cascade (must be reliable and idempotent across three services).
 - **API gateway implementation** — the diagram fixes its existence and role, not the tool (candidate: YARP). Its external surface (UI-facing) is REST/JSON and its internal calls into services (`Gateway <--> Fence`, etc.) are gRPC, per [ADR-0006](../adr/0006-grpc-internal-rest-external.md).
 - **Service-to-service auth** (likely mTLS or a service mesh, depending on the Kubernetes decision).
-- **Observability** — distributed tracing across the Location → Permission → Fence → Alert spine.
+- **Observability** — distributed tracing across the Location → Fence (→ Permission) → Alert spine.
 - **Cloud / IaC target** — Azure-leaning, Terraform vs. Kubernetes/Helm still under evaluation (SES stays on AWS regardless, per the event storming domain edges).
 
 ## Related docs

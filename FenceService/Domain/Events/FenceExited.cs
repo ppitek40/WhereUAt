@@ -1,3 +1,3 @@
 namespace Domain.Events;
 
-public sealed record FenceExited : IFenceEvent;
+public sealed record FenceExited(DateTimeOffset OccurredAt) : IFenceEvent;

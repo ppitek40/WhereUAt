@@ -1,3 +1,4 @@
+using Application;
 using Application.Abstractions;
 using Domain.Events;
 using MongoDB.Bson;
@@ -40,13 +41,28 @@ public class EventStore(IMongoDatabase mongoDatabase) : IEventStore
         var events = await collection.Find(x => x.StreamId.ToString() == streamId.ToString())
             .Sort(Builders<Event>.Sort.Ascending(x => x.Version)).ToListAsync(cancellationToken);
 
-    return events.Select(x =>
+    return
+    [
+        .. events.Select(x =>
+        {
+            var eventType = Type.GetType(x.EventType)
+                            ?? throw new InvalidOperationException($"Cannot resolve event type '{x.EventType}'.");
+
+            var eventData = (IFenceEvent)BsonSerializer.Deserialize(x.EventData, eventType);
+
+            return new EventStored<IFenceEvent>(eventData, x.Version, eventType);
+        })
+    ];}
+
+    public async Task<IList<FenceInfo>> GetFences(Guid userId, CancellationToken cancellationToken)
     {
-        var eventType = Type.GetType(x.EventType)
-            ?? throw new InvalidOperationException($"Cannot resolve event type '{x.EventType}'.");
+        var collection = mongoDatabase.GetCollection<Event>("fences");
 
-        var eventData = (IFenceEvent)BsonSerializer.Deserialize(x.EventData, eventType);
+        var events = await collection
+            .Find(x => x.EventType == typeof(FenceCreated).AssemblyQualifiedName && x.EventData["TargetId"].AsGuid == userId)
+            .Project(x => new FenceInfo(x.StreamId, x.EventData["CreatorId"].AsGuid))
+            .ToListAsync(cancellationToken);
 
-        return new EventStored<IFenceEvent>(eventData, x.Version, eventType);
-    }).ToList();}
+        return [.. events.DistinctBy(x => x.FenceId)];
+    }
 }

@@ -5,7 +5,7 @@ using WhereUAt.SharedKernel;
 
 namespace Application;
 
-public record FenceEvaluateCommand(Guid FenceId, Location TargetLocation);
+public record FenceEvaluateCommand(Guid FenceId, Location TargetLocation, DateTimeOffset OccurredAt);
 
 public class FenceEvaluateHandler(IEventStore eventStore)
 {
@@ -18,7 +18,7 @@ public class FenceEvaluateHandler(IEventStore eventStore)
             return fenceResult;
 
         var fenceEvaluateResult = fenceResult.Value!
-            .Evaluate(request.TargetLocation);
+            .Evaluate(request.TargetLocation, request.OccurredAt);
 
         if (fenceEvaluateResult.IsFailure)
             return fenceEvaluateResult;
@@ -34,7 +34,7 @@ public class FenceEvaluateHandler(IEventStore eventStore)
             cancellationToken);
 
         if (saveResult.IsFailure)
-            return Result<FenceId>.From(saveResult);
+            return saveResult;
 
         return Result.Success();
     }

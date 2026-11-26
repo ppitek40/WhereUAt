@@ -13,7 +13,7 @@ public abstract class EventConsumerService<T>(
 {
     protected abstract string TopicId { get; }
     protected abstract string GroupId { get; }
-    protected abstract Task<Result> Handle(IServiceScopeFactory serviceScopeFactory, T text);
+    protected abstract Task<Result> Handle(IServiceScopeFactory serviceScopeFactory, T @event);
 
     private IConsumer<string, T>? _consumer;
 

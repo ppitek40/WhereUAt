@@ -70,11 +70,11 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-            new FenceTargetPositionEstablished(TargetPosition.Outside)
+            new FenceTargetPositionEstablished(TargetPosition.Outside, DateTimeOffset.Now)
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(Center);
+        var result = fence.Evaluate(Center, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -88,11 +88,11 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-            new FenceTargetPositionEstablished(TargetPosition.Inside)
+            new FenceTargetPositionEstablished(TargetPosition.Inside, DateTimeOffset.Now)
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(FarAway);
+        var result = fence.Evaluate(FarAway, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -109,7 +109,7 @@ public class FenceTests
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(Center);
+        var result = fence.Evaluate(Center, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -126,7 +126,7 @@ public class FenceTests
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(FarAway);
+        var result = fence.Evaluate(FarAway, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -140,11 +140,11 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-            new FenceTargetPositionEstablished(TargetPosition.Outside)
+            new FenceTargetPositionEstablished(TargetPosition.Outside, DateTimeOffset.Now)
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(FarAway);
+        var result = fence.Evaluate(FarAway, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -158,11 +158,11 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-            new FenceTargetPositionEstablished(TargetPosition.Inside)
+            new FenceTargetPositionEstablished(TargetPosition.Inside, DateTimeOffset.Now)
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(Center);
+        var result = fence.Evaluate(Center, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -176,12 +176,12 @@ public class FenceTests
         // given
         var fence = Fence.Load([
             Created(),
-            new FenceTargetPositionEstablished(TargetPosition.Outside),
+            new FenceTargetPositionEstablished(TargetPosition.Outside, DateTimeOffset.Now),
             new FenceModified(FenceName.From("Home"), RadiusInMeters.From(100), FarAway)
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(FarAway);
+        var result = fence.Evaluate(FarAway, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeTrue();
@@ -200,7 +200,7 @@ public class FenceTests
         ]).Value!;
 
         // when
-        var result = fence.Evaluate(Center);
+        var result = fence.Evaluate(Center, DateTimeOffset.Now);
 
         // then
         result.IsSuccess.Should().BeFalse();

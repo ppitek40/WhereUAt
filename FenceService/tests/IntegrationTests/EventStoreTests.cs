@@ -31,10 +31,10 @@ public class EventStoreTests(FenceApiFactory factory) : IClassFixture<FenceApiFa
             await eventStore.SaveAsync(createdEvent.Id.Value, typeof(Fence), createdEvent, 1, CancellationToken.None);
             var fence = Fence.Load([createdEvent]).Value!;
 
-            var e1 = fence.Evaluate(Center);
+            var e1 = fence.Evaluate(Center, DateTimeOffset.Now);
             await eventStore.SaveAsync(fence.Id.Value, typeof(Fence), e1.Value, 2, CancellationToken.None);
 
-            var e2 = fence.Evaluate(FarAway);
+            var e2 = fence.Evaluate(FarAway, DateTimeOffset.Now);
             await eventStore.SaveAsync(fence.Id.Value, typeof(Fence), e2.Value, 3, CancellationToken.None);
 
             var e3 = fence.Delete();
@@ -45,6 +45,10 @@ public class EventStoreTests(FenceApiFactory factory) : IClassFixture<FenceApiFa
 
             var loadedFence = Fence.Load([..loadedEvents.Select(x => x.EventData)]);
 
-            loadedFence.Should().BeEquivalentTo(fence);
+            loadedFence.Value.Should().BeEquivalentTo(fence);
+
+            var fences = await eventStore.GetFences(fence.TargetId.Value, CancellationToken.None);
+            fences.Should().HaveCount(1);
+            fences[0].FenceId.Should().Be(fence.Id.Value);
       }
 }
